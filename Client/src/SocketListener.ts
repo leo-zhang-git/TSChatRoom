@@ -1,13 +1,14 @@
 import net from 'net'
-import { ReceiveMsg } from './SocketPackageIO'
-
-type State = 'offline' | 'loby' | 'room'
-let state: State
+import { Print, ReceiveMsg } from './SocketPackageIO'
+import { SetState } from './DealMessage'
 
 export const OnConnect = (socket: net.Socket) => {
     socket.on('connect',()=>{
+        SetState('offline')
         console.log('建立连接成功')
-        state = 'offline'
+        Print.Tips('请登录或注册账号')
+        Print.Tips('login [account]-[password]')
+        Print.Tips('signup [name]-[password]')
     })
 }
 

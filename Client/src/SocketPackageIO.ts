@@ -85,11 +85,15 @@ export const Print = {
     print: (str: string) => {
         console.log(str)
     },
+    Error: (str: string) =>{
+        console.log("!!!================================== ERROR\n" + str + "\nERROR==================================!!!")
+        throw Error('')
+    },
     Warn: (str:string) => {
-        console.log("<<=============================== warn: \n" + str + "\nwarn ===============================>>")
+        console.log("<<=============================== warn: \n\n" + str + "\n\nwarn ===============================>>")
     },
     Debug: (str:string) => {
-        console.log("<<=============================== debug: \n" + str + "\ndebug ===============================>>")
+        console.log("<<=============================== debug: \n\n" + str + "\n\ndebug ===============================>>")
     }
 }
 
