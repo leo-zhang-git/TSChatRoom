@@ -6,14 +6,19 @@ const HEADLEN = 4
 
 let buffers = new Map<net.Socket, {buffer: Buffer, ptr: number}>()
 
-export type TcpMessage = NormalMsg | LoginMsg | SignupMsg | SignupRecMsg
+export type TcpMessage = NormalMsg | LoginMsg | SignupMsg | SignupRecMsg | ServerMsg
 export interface NormalMsg {
     type: 'normal'
+    text: string
+    sender: string
+}
+export interface ServerMsg{
+    type: 'server'
     text: string
 }
 export interface LoginMsg {
     type: 'login'
-    account: number
+    account: string
     pwd: string
 }
 export interface SignupMsg {
@@ -23,12 +28,11 @@ export interface SignupMsg {
 }
 export interface SignupRecMsg {
     type: 'signupRec'
-    account: number
+    account: string
 }
 
 export const SendMsg = (socket: net.Socket, message: TcpMessage) => {
     let str = JSON.stringify(message)
-    Print.Debug("json str: " + str)
     let body = Buffer.from(str)
     Print.Debug('buffer str: ' + body.toString())
     if(body.byteLength > MSGMXLEN){
@@ -81,6 +85,10 @@ export const Print = {
     print: (str: string) => {
         console.log(str)
     },
+    Error: (str: string) =>{
+        console.log("!!!================================== ERROR\n" + str + "\nERROR==================================!!!")
+        throw Error('')
+    },
     Warn: (str:string) => {
         console.log("<<=============================== warn: \n\n" + str + "\n\nwarn ===============================>>")
     },
@@ -93,4 +101,13 @@ export const Print = {
 
 export const CloseSocket = (socket: net.Socket) => {
     buffers.delete(socket)
+}
+
+export const JsonToObj = (str: string) => {
+    try{
+        return JSON.parse(str)
+    }
+    catch{
+        Print.Error('Json parse error')
+    }
 }

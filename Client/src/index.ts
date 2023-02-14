@@ -1,7 +1,7 @@
 import net from 'net'
 import readline from 'readline'
 import { OnClose, OnError, OnReceive } from './SocketListener';
-import { SendMsg, NormalMsg } from './SocketPackageIO';
+import { SendMsg, NormalMsg, LoginMsg } from './SocketPackageIO';
 
 
 function InitClient(){
@@ -34,9 +34,10 @@ function InitClient(){
 }
 
 let OnInput = (socket: net.Socket,line: string) => {
-    let message:NormalMsg = {
-        type: 'normal',
-        text: line
+    let message:LoginMsg = {
+        type: 'login',
+        account: '1000000',
+        pwd: 'root'
     }
     SendMsg(socket, message)
 }

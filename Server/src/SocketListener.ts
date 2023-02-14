@@ -1,4 +1,5 @@
 import net from 'net'
+import { DoLogin, ForceLogout } from './DealMessage';
 import {redisClient} from "./redisConnection"
 import { CloseSocket, ReceiveMsg } from './SocketPackageIO'
 
@@ -8,7 +9,7 @@ export const OnReceive = (socket: net.Socket) => {
         let message = ReceiveMsg(socket, data)
         switch(message?.type){
             case 'login':
-                
+                DoLogin(socket, message)
                 break
             default:
                 break
@@ -20,6 +21,7 @@ export const OnClose = (socket: net.Socket) => {
     socket.on("close", (handError) => {
         CloseSocket(socket)
         console.log("服务端：客户端已经断开连接 handError: " + handError);
+        ForceLogout(socket)
     });
 
 }
