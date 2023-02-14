@@ -1,23 +1,13 @@
 import net from 'net'
 import { ReceiveMsg } from './SocketPackageIO'
 
-let State: 'offline' | 'loby' | 'room' = 'offline'
-
-interface Person{
-type: 'none'
-socket: net.Socket
-uid: number
-name: string
-}
-type User = Omit<Person, 'type'> & {type: 'user'}
-type Admin = Omit<Person, 'type'> & {type: 'admin'}
-
-let persons: Person[] = []
-let findPerson = new Map<net.Socket, Person>()
+type State = 'offline' | 'loby' | 'room'
+let state: State
 
 export const OnConnect = (socket: net.Socket) => {
     socket.on('connect',()=>{
         console.log('建立连接成功')
+        state = 'offline'
     })
 }
 

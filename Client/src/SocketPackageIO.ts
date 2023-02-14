@@ -13,17 +13,17 @@ export interface NormalMsg {
 }
 export interface LoginMsg {
     type: 'login'
-    uid: number
+    account: number
     pwd: string
 }
 export interface SignupMsg {
     type: 'signup'
-    name: number
+    name: string
     pwd: string
 }
 export interface SignupRecMsg {
     type: 'signupRec'
-    uid: number
+    account: number
 }
 
 export const SendMsg = (socket: net.Socket, message: TcpMessage) => {

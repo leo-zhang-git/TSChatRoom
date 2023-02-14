@@ -1,26 +1,17 @@
 import net from 'net'
-import redis from 'redis'
+import {redisClient} from "./redisConnection"
 import { CloseSocket, ReceiveMsg } from './SocketPackageIO'
-
-interface Person{
-type: 'none'
-socket: net.Socket
-uid: number
-name: string
-}
-type User = Omit<Person, 'type'> & {type: 'user'}
-type Admin = Omit<Person, 'type'> & {type: 'admin'}
-
-let persons: Person[] = []
-let findPerson = new Map<net.Socket, Person>()
-
 
 export const OnReceive = (socket: net.Socket) => {
     socket.on("data", (data) => {
         console.log(`收到来自客户端的数据\n${data}`);
         let message = ReceiveMsg(socket, data)
-        if(message?.type === 'normal'){
-            console.log(message.text)
+        switch(message?.type){
+            case 'login':
+                
+                break
+            default:
+                break
         }
     });
 }
