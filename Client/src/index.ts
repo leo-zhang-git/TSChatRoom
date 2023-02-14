@@ -36,8 +36,8 @@ function InitClient(){
 let OnInput = (socket: net.Socket,line: string) => {
     let message:LoginMsg = {
         type: 'login',
-        account: '1000000',
-        pwd: 'root'
+        account: '1000002',
+        pwd: '1234ab'
     }
     SendMsg(socket, message)
 }

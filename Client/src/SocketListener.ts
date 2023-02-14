@@ -29,7 +29,7 @@ export const OnReceive = (socket: net.Socket) => {
 
 export const OnClose = (socket: net.Socket) => {
     socket.on('close',(data)=>{
-        console.log('客户端：我要断开连接')
+        console.log('连接断开')
     })
 }
 

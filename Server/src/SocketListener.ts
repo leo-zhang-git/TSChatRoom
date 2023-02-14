@@ -1,5 +1,5 @@
 import net from 'net'
-import { DoLogin, ForceLogout } from './DealMessage';
+import { DoLogin, DoSignup, ForceLogout } from './DealMessage';
 import {redisClient} from "./redisConnection"
 import { CloseSocket, ReceiveMsg } from './SocketPackageIO'
 
@@ -8,6 +8,9 @@ export const OnReceive = (socket: net.Socket) => {
         console.log(`收到来自客户端的数据\n${data}`);
         let message = ReceiveMsg(socket, data)
         switch(message?.type){
+            case 'signup':
+                DoSignup(socket, message)
+                break
             case 'login':
                 DoLogin(socket, message)
                 break
