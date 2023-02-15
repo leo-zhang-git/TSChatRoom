@@ -1,6 +1,6 @@
 import {Socket} from 'net'
 import {redisClient} from './redisConnection'
-import { JsonToObj, LoginMsg, SendMsg, ServerMsg, SignupMsg, SignupRecMsg, TcpMessage } from './SocketPackageIO'
+import { JsonToObj, LoginMsg, LoginRecMsg, SendMsg, ServerMsg, SignupMsg, SignupRecMsg, TcpMessage } from './SocketPackageIO'
 
 const ACCOUNTMARK = 'uidCnt'
 type State = 'loby' | 'room'
@@ -40,13 +40,17 @@ export const DoSignup = async(socket: Socket, message: SignupMsg) =>{
  
 export const DoLogin = async(socket: Socket, message: LoginMsg) => {
     console.debug('DoLogin')
+
+    let recMsg:LoginRecMsg = {
+        type: 'loginRec',
+        text: '',
+        ret: false
+    }
+
     // Account not exist
     if(await redisClient.exists(message.account)  === 0){
-        let serverMsg:ServerMsg = {
-            type: 'server',
-            text: '账号不存在'
-        }
-        SendMsg(socket, serverMsg)
+        recMsg.text = '账号不存在'
+        SendMsg(socket, recMsg)
         return
     }
 
@@ -55,11 +59,8 @@ export const DoLogin = async(socket: Socket, message: LoginMsg) => {
     console.log('get account from redis: ', json)
     let person: Person = JsonToObj(json)
     if(person.pwd !== message.pwd){
-        let serverMsg:ServerMsg = {
-            type: 'server',
-            text: '密码错误'
-        }
-        SendMsg(socket, serverMsg)
+        recMsg.text = '密码错误'
+        SendMsg(socket, recMsg)
         return
     }
 
@@ -70,11 +71,9 @@ export const DoLogin = async(socket: Socket, message: LoginMsg) => {
 
     findClient[person.account] = socket
     findPerson.set(socket, {person: person, state: 'loby'})
-    let serverMsg:ServerMsg = {
-        type: 'server',
-        text: '登录成功'
-    }
-    SendMsg(socket, serverMsg)
+    recMsg.ret = true
+    recMsg.text = '登录成功'
+    SendMsg(socket, recMsg)
 }
 
 export const ForceLogout = (socket: Socket) => {

@@ -6,7 +6,7 @@ const HEADLEN = 4
 
 let buffers = new Map<net.Socket, {buffer: Buffer, ptr: number}>()
 
-export type TcpMessage = NormalMsg | LoginMsg | SignupMsg | SignupRecMsg | ServerMsg
+export type TcpMessage = NormalMsg | LoginMsg | SignupMsg | SignupRecMsg | ServerMsg | LoginRecMsg
 export interface NormalMsg {
     type: 'normal'
     text: string
@@ -19,6 +19,11 @@ export interface LoginMsg {
     type: 'login'
     account: string
     pwd: string
+}
+export interface LoginRecMsg{
+    type: 'loginRec'
+    text: string
+    ret: boolean
 }
 export interface SignupMsg {
     type: 'signup'

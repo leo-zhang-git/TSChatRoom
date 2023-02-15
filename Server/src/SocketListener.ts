@@ -1,7 +1,7 @@
 import net from 'net'
 import { DoLogin, DoSignup, ForceLogout } from './DealMessage';
 import {redisClient} from "./redisConnection"
-import { CloseSocket, ReceiveMsg } from './SocketPackageIO'
+import { CloseSocket, Print, ReceiveMsg } from './SocketPackageIO'
 
 export const OnReceive = (socket: net.Socket) => {
     socket.on("data", (data) => {
@@ -15,6 +15,7 @@ export const OnReceive = (socket: net.Socket) => {
                 DoLogin(socket, message)
                 break
             default:
+                Print.Warn('不期望的消息格式：\n' + message)
                 break
         }
     });

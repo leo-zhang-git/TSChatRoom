@@ -1,6 +1,6 @@
 import net from 'net'
 import readline from 'readline'
-import { ConsoleListener } from './DealMessage';
+import { ConsoleListener } from './DealCommand';
 import { OnClose, OnConnect, OnError, OnReceive } from './SocketListener';
 import { SendMsg, NormalMsg, LoginMsg } from './SocketPackageIO';
 
@@ -30,10 +30,7 @@ function InitClient(){
     rl.on("line", ConsoleListener)
 
     // close事件监听
-    rl.on("close", () => {
-        console.log("再见");
-        // process.exit(0);
-    })
+    rl.on("close", () => {})
 }
 
 InitClient()
