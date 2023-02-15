@@ -1,10 +1,10 @@
 import { socket } from ".";
-import { SendLogin, SendSignup } from "./DealMessage";
-import {Print} from "./SocketPackageIO";
+import { GetState, SendCommand, SendLogin, SendSignup } from "./DealMessage";
+import {CmdMsg, Print} from "./SocketPackageIO";
 
 
 
-const singleCmd:['help', 'exit', 'logout', 'create room', 'leave', 'roll'] = ['help', 'exit', 'logout', 'create room', 'leave', 'roll'] 
+export const singleCmd:['help', 'exit', 'logout', 'create room', 'leave', 'roll'] = ['help', 'exit', 'logout', 'create room', 'leave', 'roll'] 
 const argCmd:['login', 'signup', 'join', 'refresh', 'say', 'reply', 'list', 'kick']
 = ['login', 'signup', 'join', 'refresh', 'say', 'reply', 'list', 'kick']
 
@@ -27,7 +27,7 @@ export const ConsoleListener = (line: string) =>{
             // TODO
             break
         case 'create room':
-            // TODO
+            CreateRoomCmd(cmdArg)
             break
         case 'leave':
             // TODO
@@ -69,7 +69,24 @@ function ExitCmd(){
     socket.end(() => {process.exit(0)})
 }
 
+function CreateRoomCmd(str: string){
+    if(GetState() !== 'loby'){
+        Print.Tips('只有在大厅才能创建房间')
+        return
+    }
+    let message:CmdMsg = {
+        type: 'command',
+        cmd: 'create room',
+    }
+    if(str.length > 0) message.arg = str
+    SendCommand(message)
+}
+
 function LoginCmd(str: string){
+    if(GetState() !== 'offline'){
+        Print.Tips('您已经登录，若要登录其他账号请先退出当前账号')
+        return
+    }
     let args = str.split('-', 2)
     if(args.length !== 2){
         CmdIncorrect()
@@ -79,6 +96,10 @@ function LoginCmd(str: string){
 }
 
 function SignupCmd(str: string){
+    if(GetState() !== 'offline'){
+        Print.Tips('您已经登录，若要注册请先退出当前账号')
+        return
+    }
     let args = str.split('-', 2)
     if(args.length !== 2){
         CmdIncorrect()

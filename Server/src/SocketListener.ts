@@ -1,11 +1,11 @@
 import net from 'net'
-import { DoLogin, DoSignup, ForceLogout } from './DealMessage';
+import { DealCmd, DoLogin, DoSignup, ForceLogout } from './DealMessage';
 import {redisClient} from "./redisConnection"
 import { CloseSocket, Print, ReceiveMsg } from './SocketPackageIO'
 
 export const OnReceive = (socket: net.Socket) => {
     socket.on("data", (data) => {
-        console.log(`收到来自客户端的数据\n${data}`);
+        Print.print(`收到来自客户端的数据\n${data}`);
         let message = ReceiveMsg(socket, data)
         switch(message?.type){
             case 'signup':
@@ -13,6 +13,9 @@ export const OnReceive = (socket: net.Socket) => {
                 break
             case 'login':
                 DoLogin(socket, message)
+                break
+            case 'command':
+                DealCmd(socket, message)
                 break
             default:
                 Print.Warn('不期望的消息格式：\n' + message)
@@ -24,7 +27,7 @@ export const OnReceive = (socket: net.Socket) => {
 export const OnClose = (socket: net.Socket) => {
     socket.on("close", (handError) => {
         CloseSocket(socket)
-        console.log("服务端：客户端已经断开连接 handError: " + handError);
+        Print.print("服务端：客户端已经断开连接 handError: " + handError);
         ForceLogout(socket)
     });
 
@@ -32,7 +35,7 @@ export const OnClose = (socket: net.Socket) => {
 
 export const OnError = (socket: net.Socket) => {
     socket.on('error', (err) => {
-        console.log("客户端错误： " + err)
+        Print.print("客户端错误： " + err)
     })
 }
 

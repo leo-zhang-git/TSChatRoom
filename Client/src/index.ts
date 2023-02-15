@@ -2,7 +2,6 @@ import net from 'net'
 import readline from 'readline'
 import { ConsoleListener } from './DealCommand';
 import { OnClose, OnConnect, OnError, OnReceive } from './SocketListener';
-import { SendMsg, NormalMsg, LoginMsg } from './SocketPackageIO';
 
 const PORT = 8088
 const HOST = "127.0.0.1"

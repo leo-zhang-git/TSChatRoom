@@ -7,7 +7,9 @@ const DEBUG: true = true
 
 let buffers = new Map<net.Socket, {buffer: Buffer, ptr: number}>()
 
-export type TcpMessage = NormalMsg | LoginMsg | SignupMsg | SignupRecMsg | ServerMsg | LoginRecMsg
+const singleCmd:['help', 'exit', 'logout', 'create room', 'leave', 'roll'] = ['help', 'exit', 'logout', 'create room', 'leave', 'roll'] 
+
+export type TcpMessage = NormalMsg | LoginMsg | SignupMsg | SignupRecMsg | ServerMsg | LoginRecMsg | CmdMsg | JoinMsg | JoinRecMsg
 export interface NormalMsg {
     type: 'normal'
     text: string
@@ -38,11 +40,24 @@ export interface SignupRecMsg {
     text: string
     ret: boolean
 }
+export interface CmdMsg{
+    type: 'command'
+    cmd: (typeof singleCmd)[number]
+    arg?: string
+}
+export interface JoinMsg{
+    type: 'join'
+    rid: string
+}
+export interface JoinRecMsg{
+    type: 'joinRec'
+    ret: boolean
+    rid: string
+}
 
 export const SendMsg = (socket: net.Socket, message: TcpMessage) => {
     let str = JSON.stringify(message)
     let body = Buffer.from(str)
-    Print.Debug('buffer str: ' + body.toString())
     if(body.byteLength > MSGMXLEN){
         Print.Tips("Message is too long")
         return

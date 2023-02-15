@@ -1,7 +1,8 @@
 import { createClient } from "redis";
+import { Print } from "./SocketPackageIO";
 
 export const redisClient = createClient();
-redisClient.on('ready', (err) =>{console.log('redis ready')})
+redisClient.on('ready', (err) =>{Print.print('redis ready')})
 
 
 export async function InitRedisConnect() {

@@ -1,4 +1,5 @@
 import net from 'net'
+import { singleCmd } from './DealCommand'
 
 const BUFFERMAXLEN = 65535
 const MSGMXLEN = 12000
@@ -7,7 +8,7 @@ const DEBUG: true = true
 
 let buffers = new Map<net.Socket, {buffer: Buffer, ptr: number}>()
 
-export type TcpMessage = NormalMsg | LoginMsg | SignupMsg | SignupRecMsg | ServerMsg | LoginRecMsg
+export type TcpMessage = NormalMsg | LoginMsg | SignupMsg | SignupRecMsg | ServerMsg | LoginRecMsg | CmdMsg
 export interface NormalMsg {
     type: 'normal'
     text: string
@@ -36,6 +37,11 @@ export interface SignupRecMsg {
     account: string
     text: string
     ret: boolean
+}
+export interface CmdMsg{
+    type: 'command'
+    cmd: (typeof singleCmd)[number]
+    arg?: string
 }
 
 export const SendMsg = (socket: net.Socket, message: TcpMessage) => {

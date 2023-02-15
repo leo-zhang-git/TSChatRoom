@@ -1,8 +1,11 @@
 import {Socket} from 'net'
 import {redisClient} from './redisConnection'
-import { JsonToObj, LoginMsg, LoginRecMsg, Print, SendMsg, ServerMsg, SignupMsg, SignupRecMsg, TcpMessage } from './SocketPackageIO'
+import { CmdMsg, JoinMsg, JoinRecMsg, JsonToObj, LoginMsg, LoginRecMsg, Print, SendMsg, ServerMsg, SignupMsg, SignupRecMsg, TcpMessage } from './SocketPackageIO'
 
 const ACCOUNTMARK = 'uidCnt'
+const MAXROOM = 2
+let nexRoom = 0
+
 type State = 'loby' | 'room'
 interface Person{
     type: 'user' | 'admin'
@@ -10,14 +13,36 @@ interface Person{
     name: string
     pwd: string
 }
+interface Room{
+    rid: string
+    rname: string
+    members: Person[]
+}
+interface PersonState{
+    person: Person
+    state: State 
+    room?: Room
+}
 
-let findPerson = new Map<Socket, {person: Person, state: State}>()
+let findPerson = new Map<Socket, PersonState>()
 let findClient :{
     [K: string]: Socket
 } = {}
 
+let roomList: {[rid: string]: Room} = {}
+
+export const DealCmd = (socket: Socket, message: CmdMsg) =>{
+    switch(message.cmd){
+        case 'create room':
+            DoCreateRoom(socket, message)
+            break
+        default:
+            break
+    }
+}
+
 export const DoSignup = async(socket: Socket, message: SignupMsg) =>{
-    console.log('DoSignup')
+    Print.print('DoSignup')
 
     let recMsg:SignupRecMsg = {
         type: 'signupRec',
@@ -49,7 +74,7 @@ export const DoSignup = async(socket: Socket, message: SignupMsg) =>{
 }
  
 export const DoLogin = async(socket: Socket, message: LoginMsg) => {
-    console.debug('DoLogin')
+    Print.print('DoLogin')
 
     let recMsg:LoginRecMsg = {
         type: 'loginRec',
@@ -66,7 +91,7 @@ export const DoLogin = async(socket: Socket, message: LoginMsg) => {
 
     // Password incorrect
     let json = await redisClient.get(message.account) as string
-    console.log('get account from redis: ', json)
+    Print.print('get account from redis: ' + json)
     let person: Person = JsonToObj(json)
     if(person.pwd !== message.pwd){
         recMsg.text = '密码错误'
@@ -74,22 +99,70 @@ export const DoLogin = async(socket: Socket, message: LoginMsg) => {
         return
     }
 
-    // Multiple logins
-    if(person.account in findClient){
-        ForceLogout(findClient[person.account])
-    }
-
-    findClient[person.account] = socket
-    findPerson.set(socket, {person: person, state: 'loby'})
+    OnlinePerson(socket, person)
     recMsg.ret = true
     recMsg.text = '登录成功'
     SendMsg(socket, recMsg)
 }
 
+const DoCreateRoom = (socket: Socket, message: CmdMsg) =>{
+    Print.print('DoCreateRoom')
+    if(!ClientIsLogin(socket)){
+        Print.Warn('has invaild client to create room offline')
+        return
+    }
+    let personState = GetPersonState(socket)
+    if(personState.state !== 'loby'){
+        Print.Warn('has invaild client to create room not in loby')
+        return
+    }
+    if(Object.keys(roomList).length === MAXROOM){
+        SendMsg(socket, {type: 'server', text: '当前房间数已达上限'})
+        return
+    }
+    let room: Room = {
+        rid : (nexRoom++).toString(),
+        rname: message.arg as string,
+        members: []
+    }
+    nexRoom = nexRoom % MAXROOM
+    roomList[room.rid] = room
+    DoJoin(socket, room.rid)
+}
+export const DoJoin = (socket: Socket, rid: string) =>{
+    Print.print('DoJoin')
+    let message: JoinRecMsg = {
+        type: 'joinRec',
+        rid: rid,
+        ret: false
+    }
+    if(!ClientIsLogin(socket)){
+        Print.Warn('has invaild client to join room offline')
+        SendMsg(socket, message)
+        return
+    }
+    let personState = GetPersonState(socket)
+    if(personState.state !== 'loby'){
+        Print.Warn('has invaild client to join room not in loby')
+        SendMsg(socket, message)
+        return
+    }
+    personState.state = 'room'
+    personState.room = roomList[rid]
+    roomList[rid].members.push(personState.person)
+
+    message.ret = true
+    SendMsg(socket, message)
+}
+
 export const ForceLogout = (socket: Socket) => {
-    if(findPerson.has(socket)){
-        let account = findPerson.get(socket)?.person.account as string
-        delete findClient[account]
+    if(ClientIsLogin(socket)){
+        let personState = GetPersonState(socket)
+        if(personState.room){
+            RoomDelMember(personState.room, personState.person)
+        }
+
+        delete findClient[personState.person.account]
         findPerson.delete(socket)
     }
     socket.end()
@@ -101,4 +174,32 @@ function IsCorrectPwd(pwd: string): boolean {
 }
 function IsCorrectName(name: string): boolean {
     return name.length > 0
+}
+
+function IsOnline(person: Person){
+    return person.account in findClient
+}
+function ClientIsLogin(socket: Socket){
+    return findPerson.has(socket)
+}
+function GetPersonState(socket: Socket){
+    return findPerson.get(socket) as PersonState
+}
+function OnlinePerson(socket: Socket, person: Person){
+    // Multiple logins
+    if(person.account in findClient){
+        ForceLogout(findClient[person.account])
+    }
+    findClient[person.account] = socket
+    findPerson.set(socket, {person: person, state: 'loby'})
+}
+
+function RoomDelMember(room: Room, member: Person){
+    room.members.splice(room.members.indexOf(member), 1)
+    if(room.members.length === 0) setTimeout(() =>{DelRoom(room.rid, false)}, 10 * 1000)
+}
+function DelRoom(rid: string, force: boolean){
+    // TODO Force delete room
+    if(force || roomList[rid].members.length === 0)
+        delete roomList[rid]
 }
