@@ -1,6 +1,6 @@
 import {Socket} from 'net'
 import {redisClient} from './redisConnection'
-import { JsonToObj, LoginMsg, LoginRecMsg, SendMsg, ServerMsg, SignupMsg, SignupRecMsg, TcpMessage } from './SocketPackageIO'
+import { JsonToObj, LoginMsg, LoginRecMsg, Print, SendMsg, ServerMsg, SignupMsg, SignupRecMsg, TcpMessage } from './SocketPackageIO'
 
 const ACCOUNTMARK = 'uidCnt'
 type State = 'loby' | 'room'
@@ -18,13 +18,17 @@ let findClient :{
 
 export const DoSignup = async(socket: Socket, message: SignupMsg) =>{
     console.log('DoSignup')
+
+    let recMsg:SignupRecMsg = {
+        type: 'signupRec',
+        text: '',
+        account: '',
+        ret: false
+    }
     // Invaild password or name
     if(!IsCorrectPwd(message.pwd) || !IsCorrectName(message.name)){
-        let message:ServerMsg = {
-            type: 'server',
-            text: "名字或密码不合法(密码长度至少为6)"
-        }
-        SendMsg(socket, message)
+        recMsg.text = "名字或密码不合法(密码长度至少为6)"
+        SendMsg(socket, recMsg)
         return
     }
 
@@ -34,8 +38,14 @@ export const DoSignup = async(socket: Socket, message: SignupMsg) =>{
         name: message.name,
         pwd: message.pwd
     }
-    console.log('signup set redis: ', JSON.stringify(person))
+    Print.print('signup set redis: ' + JSON.stringify(person))
     redisClient.set(person.account, JSON.stringify(person))
+    
+    recMsg.ret = true
+    recMsg.text = '注册账号成功'
+    recMsg.account = person.account
+    SendMsg(socket, recMsg)
+
 }
  
 export const DoLogin = async(socket: Socket, message: LoginMsg) => {

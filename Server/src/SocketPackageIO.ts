@@ -3,6 +3,7 @@ import net from 'net'
 const BUFFERMAXLEN = 65535
 const MSGMXLEN = 12000
 const HEADLEN = 4
+const DEBUG: true = true
 
 let buffers = new Map<net.Socket, {buffer: Buffer, ptr: number}>()
 
@@ -34,6 +35,8 @@ export interface SignupMsg {
 export interface SignupRecMsg {
     type: 'signupRec'
     account: string
+    text: string
+    ret: boolean
 }
 
 export const SendMsg = (socket: net.Socket, message: TcpMessage) => {
@@ -88,6 +91,7 @@ export const Print = {
         console.log("****************< " + str + " >****************")
     },
     print: (str: string) => {
+        if(!DEBUG) return
         console.log(str)
     },
     Error: (str: string) =>{
@@ -95,9 +99,11 @@ export const Print = {
         throw Error('')
     },
     Warn: (str:string) => {
+        if(!DEBUG) return
         console.log("<<=============================== warn: \n\n" + str + "\n\nwarn ===============================>>")
     },
     Debug: (str:string) => {
+        if(!DEBUG) return
         console.log("<<=============================== debug: \n\n" + str + "\n\ndebug ===============================>>")
     }
 }

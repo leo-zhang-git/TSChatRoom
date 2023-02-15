@@ -1,5 +1,5 @@
 import { socket } from ".";
-import { SendLogin } from "./DealMessage";
+import { SendLogin, SendSignup } from "./DealMessage";
 import {Print} from "./SocketPackageIO";
 
 
@@ -38,6 +38,9 @@ export const ConsoleListener = (line: string) =>{
         case 'login':
             LoginCmd(cmdArg)
             break
+        case 'signup':
+            SignupCmd(cmdArg)
+            break
         default :
             Print.Tips('找不到指令')
             break
@@ -73,6 +76,15 @@ function LoginCmd(str: string){
         return
     }
     SendLogin(args[0], args[1])
+}
+
+function SignupCmd(str: string){
+    let args = str.split('-', 2)
+    if(args.length !== 2){
+        CmdIncorrect()
+        return
+    }
+    SendSignup(args[0], args[1])
 }
 
 function CmdIncorrect(){
