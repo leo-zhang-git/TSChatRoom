@@ -1,10 +1,11 @@
 import {Socket} from 'net'
 import {redisClient} from './redisConnection'
-import { CmdMsg, JoinMsg, JoinRecMsg, JsonToObj, LoginMsg, LoginRecMsg, Print, RefreshRecMsg, SendMsg, ServerMsg, SignupMsg, SignupRecMsg, TcpMessage } from './SocketPackageIO'
+import { CmdMsg, JoinRecMsg, JsonToObj, LoginMsg, LoginRecMsg, Print, RefreshRecMsg, SendMsg, SignupMsg, SignupRecMsg } from './SocketPackageIO'
 
 const ACCOUNTMARK = 'uidCnt'
 const MAXROOM = 1
 const DEFAULTROOMNAME = '未设置房间名'
+const ROOMDELTIME = 10 * 1000
 let nexRoom = 0
 
 type State = 'loby' | 'room'
@@ -18,6 +19,7 @@ interface Room{
     rid: string
     rname: string
     members: Person[]
+    lastEmptyTime?: Date
 }
 interface PersonState{
     person: Person
@@ -39,6 +41,12 @@ export const DealCmd = (socket: Socket, message: CmdMsg) =>{
             break
         case 'refresh':
             DoRefresh(socket)
+            break
+        case 'logout':
+            DoLogout(socket)
+            break
+        case 'leave':
+            DoLeave(socket)
             break
         default:
             break
@@ -127,7 +135,7 @@ const DoCreateRoom = (socket: Socket, message: CmdMsg) =>{
     let room: Room = {
         rid : (nexRoom++).toString(),
         rname: message.arg ?? DEFAULTROOMNAME,
-        members: []
+        members: [],
     }
     roomList[room.rid] = room
     DoJoin(socket, room.rid)
@@ -153,6 +161,37 @@ const DoRefresh = (socket: Socket) =>{
         message.rooms.push({rid: i, rname: roomList[i].rname})
     }
     SendMsg(socket, message)
+}
+
+const DoLogout = (socket: Socket) =>{
+    Print.print('DoLogout')
+    if(!ClientIsLogin(socket)){
+        Print.Warn('has invaild client to logout room offline')
+        return
+    }
+    let personState = GetPersonState(socket)
+    if(personState.state === 'room') DoLeave(socket)
+
+    delete findClient[personState.person.account]
+    findPerson.delete(socket)
+    SendMsg(socket, {type: 'command', cmd: 'logout'})
+}
+
+const DoLeave = (socket: Socket) =>{
+    Print.print('DoLeave')
+    if(!ClientIsLogin(socket)){
+        Print.Warn('has invaild client to leave room offline')
+        return
+    }
+    let personState = GetPersonState(socket)
+    if(personState.state !== 'room'){
+        Print.Warn('has invaild client to leave room not in room')
+        return
+    }
+    RoomDelMember(personState.room as Room, personState.person)
+    personState.state = 'loby'
+    personState.room = undefined
+    SendMsg(socket, {type: 'command', cmd: 'leave'})
 }
 
 export const DoJoin = (socket: Socket, rid: string) =>{
@@ -183,25 +222,16 @@ export const DoJoin = (socket: Socket, rid: string) =>{
         return
     }
 
-    personState.state = 'room'
-    personState.room = roomList[rid]
-    roomList[rid].members.push(personState.person)
+    
+    RoomAddMember(roomList[rid], personState)
 
     message.ret = true
-    message.rname = personState.room.rname
+    message.rname = personState.room?.rname as string
     SendMsg(socket, message)
 }
 
 export const ForceLogout = (socket: Socket) => {
-    if(ClientIsLogin(socket)){
-        let personState = GetPersonState(socket)
-        if(personState.room){
-            RoomDelMember(personState.room, personState.person)
-        }
-
-        delete findClient[personState.person.account]
-        findPerson.delete(socket)
-    }
+    DoLogout(socket)
     socket.end()
 }
 
@@ -231,12 +261,23 @@ function OnlinePerson(socket: Socket, person: Person){
     findPerson.set(socket, {person: person, state: 'loby'})
 }
 
+function RoomAddMember(room: Room, personState: PersonState){
+    personState.state = 'room'
+    personState.room = room
+    room.members.push(personState.person)
+    room.lastEmptyTime = undefined
+}
+
 function RoomDelMember(room: Room, member: Person){
     room.members.splice(room.members.indexOf(member), 1)
-    if(room.members.length === 0) setTimeout(() =>{DelRoom(room.rid, false)}, 10 * 1000)
+    if(room.members.length === 0){
+        room.lastEmptyTime = new Date()
+        setTimeout(() =>{DelRoom(room.rid, false)}, ROOMDELTIME)
+    }
 }
 function DelRoom(rid: string, force: boolean){
     // TODO Force delete room
-    if(force || roomList[rid].members.length === 0)
+    if(force || (roomList[rid].lastEmptyTime && 
+        new Date().getTime() - (roomList[rid].lastEmptyTime?.getTime() as number) > ROOMDELTIME))
         delete roomList[rid]
 }

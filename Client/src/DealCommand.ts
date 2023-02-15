@@ -1,6 +1,6 @@
 import { socket } from ".";
 import { GetState, SendCommand, SendJoin, SendLogin, SendSignup } from "./DealMessage";
-import {CmdMsg, JoinMsg, Print} from "./SocketPackageIO";
+import {CmdMsg, Print} from "./SocketPackageIO";
 
 
 
@@ -24,7 +24,7 @@ export const ConsoleListener = (line: string) =>{
             ExitCmd()
             break
         case 'logout':
-            // TODO
+            LogoutCmd()
             break
         case 'create room':
             CreateRoomCmd(cmdArg)
@@ -33,7 +33,7 @@ export const ConsoleListener = (line: string) =>{
             RefreshCmd()
             break
         case 'leave':
-            // TODO
+            LeaveCmd()
             break
         case 'roll':
             // TODO
@@ -75,6 +75,14 @@ function ExitCmd(){
     socket.end(() => {process.exit(0)})
 }
 
+function LogoutCmd(){
+    if(GetState() === 'offline'){
+        Print.Tips('当前状态不能退出登录')
+        return
+    }
+    SendCommand({type: 'command', cmd: 'logout'})
+}
+
 function CreateRoomCmd(str: string){
     if(GetState() !== 'loby'){
         Print.Tips('只有在大厅才能创建房间')
@@ -99,6 +107,14 @@ function RefreshCmd(){
         cmd: 'refresh',
     }
     SendCommand(message)
+}
+
+function LeaveCmd(){
+    if(GetState() !== 'room'){
+        Print.Tips('当前状态不能退出房间')
+        return
+    }
+    SendCommand({type: 'command', cmd: 'leave'})
 }
 
 function LoginCmd(str: string){

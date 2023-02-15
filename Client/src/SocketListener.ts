@@ -14,7 +14,7 @@ export const OnConnect = (socket: net.Socket) => {
 
 export const OnReceive = (socket: net.Socket) => {
     socket.on('data',(data)=>{
-        console.log(`客户端收到来自服务端的：${data}`)
+        console.log(`收到来自服务端的数据：${data}`)
         let message = ReceiveMsg(socket, data)
         switch(message?.type)
         {
@@ -35,6 +35,20 @@ export const OnReceive = (socket: net.Socket) => {
                 break
             case 'refreshRec':
                 RecRefresh(message)
+                break
+            case 'command':
+                switch(message.cmd){
+                    case 'leave':
+                        SetState('loby')
+                        Print.Tips('退出房间')
+                        break
+                    case 'logout':
+                        SetState('offline')
+                        Print.Tips('退出账号')
+                        break
+                    default:
+                        break
+                }
                 break
             default:
                 break
