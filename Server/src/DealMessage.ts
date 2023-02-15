@@ -1,6 +1,6 @@
 import {Socket} from 'net'
 import {redisClient} from './redisConnection'
-import { CmdMsg, JoinMsg, JoinRecMsg, JsonToObj, LoginMsg, LoginRecMsg, Print, SendMsg, ServerMsg, SignupMsg, SignupRecMsg, TcpMessage } from './SocketPackageIO'
+import { CmdMsg, JoinMsg, JoinRecMsg, JsonToObj, LoginMsg, LoginRecMsg, Print, RefreshRecMsg, SendMsg, ServerMsg, SignupMsg, SignupRecMsg, TcpMessage } from './SocketPackageIO'
 
 const ACCOUNTMARK = 'uidCnt'
 const MAXROOM = 1
@@ -36,6 +36,9 @@ export const DealCmd = (socket: Socket, message: CmdMsg) =>{
     switch(message.cmd){
         case 'create room':
             DoCreateRoom(socket, message)
+            break
+        case 'refresh':
+            DoRefresh(socket)
             break
         default:
             break
@@ -129,6 +132,29 @@ const DoCreateRoom = (socket: Socket, message: CmdMsg) =>{
     roomList[room.rid] = room
     DoJoin(socket, room.rid)
 }
+
+const DoRefresh = (socket: Socket) =>{
+    Print.print('DoRefresh')
+    if(!ClientIsLogin(socket)){
+        Print.Warn('has invaild client to refresh offline')
+        return
+    }
+    let personState = GetPersonState(socket)
+    if(personState.state !== 'loby'){
+        Print.Warn('has invaild client to refresh not in loby')
+        return
+    }
+    let message: RefreshRecMsg = {
+        type: 'refreshRec',
+        rooms: []
+    }
+    // eslint-disable-next-line guard-for-in
+    for(let i in roomList){
+        message.rooms.push({rid: i, rname: roomList[i].rname})
+    }
+    SendMsg(socket, message)
+}
+
 export const DoJoin = (socket: Socket, rid: string) =>{
     Print.print('DoJoin')
 

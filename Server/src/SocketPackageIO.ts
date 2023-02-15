@@ -7,9 +7,9 @@ const DEBUG: true = true
 
 let buffers = new Map<net.Socket, {buffer: Buffer, ptr: number}>()
 
-const singleCmd:['help', 'exit', 'logout', 'create room', 'leave', 'roll'] = ['help', 'exit', 'logout', 'create room', 'leave', 'roll'] 
+const singleCmd:['help', 'exit', 'logout', 'create room', 'refresh', 'leave', 'roll'] = ['help', 'exit', 'logout', 'create room', 'refresh', 'leave', 'roll'] 
 
-export type TcpMessage = NormalMsg | LoginMsg | SignupMsg | SignupRecMsg | ServerMsg | LoginRecMsg | CmdMsg | JoinMsg | JoinRecMsg
+export type TcpMessage = NormalMsg | LoginMsg | SignupMsg | SignupRecMsg | ServerMsg | LoginRecMsg | CmdMsg | JoinMsg | JoinRecMsg | RefreshRecMsg
 export interface NormalMsg {
     type: 'normal'
     text: string
@@ -54,6 +54,10 @@ export interface JoinRecMsg{
     ret: boolean
     rid: string
     rname: string
+}
+export interface RefreshRecMsg{
+    type: 'refreshRec'
+    rooms: {rid: string, rname: string}[]
 }
 
 export const SendMsg = (socket: net.Socket, message: TcpMessage) => {

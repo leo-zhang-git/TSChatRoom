@@ -1,5 +1,5 @@
 import {socket} from '.'
-import { CmdMsg, JoinMsg, JoinRecMsg, LoginMsg, LoginRecMsg, Print, SendMsg, SignupMsg, SignupRecMsg } from './SocketPackageIO'
+import { CmdMsg, JoinMsg, JoinRecMsg, LoginMsg, LoginRecMsg, Print, RefreshRecMsg, SendMsg, SignupMsg, SignupRecMsg } from './SocketPackageIO'
 
 type State = 'offline' | 'loby' | 'room'
 let state: State = 'offline'
@@ -58,6 +58,15 @@ export const RecJoin = (message: JoinRecMsg) =>{
 
     SetState('room')
     Print.Tips('加入房间: ' + message.rid + " " + message.rname)
+}
+
+export const RecRefresh = (message: RefreshRecMsg) =>{
+    if(state !== 'loby') return
+    console.log('\n\n当前房间列表:')
+    console.log('rid\t\trname')
+    for(let i of message.rooms){
+        console.log(i.rid + '\t\t' + i.rname)
+    }
 }
 
 export const SendCommand = (message: CmdMsg) =>{

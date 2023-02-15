@@ -1,6 +1,6 @@
 import net from 'net'
 import { Print, ReceiveMsg } from './SocketPackageIO'
-import { RecJoin, RecLogin, RecSignup, SetState } from './DealMessage'
+import { RecJoin, RecLogin, RecRefresh, RecSignup, SetState } from './DealMessage'
 
 export const OnConnect = (socket: net.Socket) => {
     socket.on('connect',()=>{
@@ -32,6 +32,9 @@ export const OnReceive = (socket: net.Socket) => {
                 break
             case 'joinRec':
                 RecJoin(message)
+                break
+            case 'refreshRec':
+                RecRefresh(message)
                 break
             default:
                 break

@@ -4,9 +4,9 @@ import {CmdMsg, JoinMsg, Print} from "./SocketPackageIO";
 
 
 
-export const singleCmd:['help', 'exit', 'logout', 'create room', 'leave', 'roll'] = ['help', 'exit', 'logout', 'create room', 'leave', 'roll'] 
-const argCmd:['login', 'signup', 'join', 'refresh', 'say', 'reply', 'list', 'kick']
-= ['login', 'signup', 'join', 'refresh', 'say', 'reply', 'list', 'kick']
+export const singleCmd:['help', 'exit', 'logout', 'create room', 'refresh', 'leave', 'roll'] = ['help', 'exit', 'logout', 'create room', 'refresh', 'leave', 'roll'] 
+const argCmd:['login', 'signup', 'join', 'say', 'reply', 'list', 'kick']
+= ['login', 'signup', 'join', 'say', 'reply', 'list', 'kick']
 
 type inputCommand = typeof singleCmd | typeof argCmd
 
@@ -28,6 +28,9 @@ export const ConsoleListener = (line: string) =>{
             break
         case 'create room':
             CreateRoomCmd(cmdArg)
+            break
+        case 'refresh':
+            RefreshCmd()
             break
         case 'leave':
             // TODO
@@ -82,6 +85,19 @@ function CreateRoomCmd(str: string){
         cmd: 'create room',
     }
     if(str.length > 0) message.arg = str
+    SendCommand(message)
+}
+
+function RefreshCmd(){
+    if(GetState() !== 'loby'){
+        Print.Tips('只有在大厅才能更新房间列表')
+        return
+    }
+
+    let message:CmdMsg = {
+        type: 'command',
+        cmd: 'refresh',
+    }
     SendCommand(message)
 }
 
