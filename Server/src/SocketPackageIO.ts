@@ -53,6 +53,7 @@ export interface JoinRecMsg{
     type: 'joinRec'
     ret: boolean
     rid: string
+    rname: string
 }
 
 export const SendMsg = (socket: net.Socket, message: TcpMessage) => {

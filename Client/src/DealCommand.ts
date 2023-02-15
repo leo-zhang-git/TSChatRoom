@@ -1,6 +1,6 @@
 import { socket } from ".";
-import { GetState, SendCommand, SendLogin, SendSignup } from "./DealMessage";
-import {CmdMsg, Print} from "./SocketPackageIO";
+import { GetState, SendCommand, SendJoin, SendLogin, SendSignup } from "./DealMessage";
+import {CmdMsg, JoinMsg, Print} from "./SocketPackageIO";
 
 
 
@@ -40,6 +40,9 @@ export const ConsoleListener = (line: string) =>{
             break
         case 'signup':
             SignupCmd(cmdArg)
+            break
+        case 'join':
+            JoinCmd(cmdArg)
             break
         default :
             Print.Tips('找不到指令')
@@ -108,10 +111,30 @@ function SignupCmd(str: string){
     SendSignup(args[0], args[1])
 }
 
+function JoinCmd(str: string){
+    if(GetState() !== 'loby'){
+        Print.Tips('只有在大厅才能加入房间')
+        return
+    }
+    if(str.length <= 0 || !IsNumber(str)){
+        CmdIncorrect()
+        return
+    }
+    
+    SendJoin(str)
+}
+
+
+
+
+
 function CmdIncorrect(){
     Print.Tips('命令格式错误')
 }
-
+function IsNumber(str: string){
+    let ret = str.match(/[0-9]*/)
+    return ret && ret[0] === str
+}
 
 
 

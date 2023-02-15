@@ -3,7 +3,8 @@ import {redisClient} from './redisConnection'
 import { CmdMsg, JoinMsg, JoinRecMsg, JsonToObj, LoginMsg, LoginRecMsg, Print, SendMsg, ServerMsg, SignupMsg, SignupRecMsg, TcpMessage } from './SocketPackageIO'
 
 const ACCOUNTMARK = 'uidCnt'
-const MAXROOM = 2
+const MAXROOM = 1
+const DEFAULTROOMNAME = '未设置房间名'
 let nexRoom = 0
 
 type State = 'loby' | 'room'
@@ -122,36 +123,46 @@ const DoCreateRoom = (socket: Socket, message: CmdMsg) =>{
     }
     let room: Room = {
         rid : (nexRoom++).toString(),
-        rname: message.arg as string,
+        rname: message.arg ?? DEFAULTROOMNAME,
         members: []
     }
-    nexRoom = nexRoom % MAXROOM
     roomList[room.rid] = room
     DoJoin(socket, room.rid)
 }
 export const DoJoin = (socket: Socket, rid: string) =>{
     Print.print('DoJoin')
+
     let message: JoinRecMsg = {
         type: 'joinRec',
         rid: rid,
-        ret: false
+        ret: false,
+        rname: ''
     }
+
+    if(!(rid in roomList)){
+        SendMsg(socket, message)
+        return
+    }
+
     if(!ClientIsLogin(socket)){
         Print.Warn('has invaild client to join room offline')
         SendMsg(socket, message)
         return
     }
+
     let personState = GetPersonState(socket)
     if(personState.state !== 'loby'){
         Print.Warn('has invaild client to join room not in loby')
         SendMsg(socket, message)
         return
     }
+
     personState.state = 'room'
     personState.room = roomList[rid]
     roomList[rid].members.push(personState.person)
 
     message.ret = true
+    message.rname = personState.room.rname
     SendMsg(socket, message)
 }
 

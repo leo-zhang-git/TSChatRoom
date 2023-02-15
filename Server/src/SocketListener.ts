@@ -1,5 +1,5 @@
 import net from 'net'
-import { DealCmd, DoLogin, DoSignup, ForceLogout } from './DealMessage';
+import { DealCmd, DoJoin, DoLogin, DoSignup, ForceLogout } from './DealMessage';
 import {redisClient} from "./redisConnection"
 import { CloseSocket, Print, ReceiveMsg } from './SocketPackageIO'
 
@@ -16,6 +16,9 @@ export const OnReceive = (socket: net.Socket) => {
                 break
             case 'command':
                 DealCmd(socket, message)
+                break
+            case 'join':
+                DoJoin(socket, message.rid)
                 break
             default:
                 Print.Warn('不期望的消息格式：\n' + message)

@@ -1,5 +1,5 @@
 import {socket} from '.'
-import { CmdMsg, LoginMsg, LoginRecMsg, Print, SendMsg, SignupMsg, SignupRecMsg } from './SocketPackageIO'
+import { CmdMsg, JoinMsg, JoinRecMsg, LoginMsg, LoginRecMsg, Print, SendMsg, SignupMsg, SignupRecMsg } from './SocketPackageIO'
 
 type State = 'offline' | 'loby' | 'room'
 let state: State = 'offline'
@@ -40,6 +40,24 @@ export const RecSignup = (message: SignupRecMsg) =>{
     }
     Print.Tips(message.text)
     console.log('您的账号为：' + message.account)
+}
+
+export const SendJoin = (rid: string) =>{
+    let message:JoinMsg = {
+        type: 'join',
+        rid: rid,
+    }
+    SendMsg(socket, message)
+}
+
+export const RecJoin = (message: JoinRecMsg) =>{
+    if(!message.ret){
+        Print.Tips('加入房间失败，请检查房间id是否正确')
+        return
+    }
+
+    SetState('room')
+    Print.Tips('加入房间: ' + message.rid + " " + message.rname)
 }
 
 export const SendCommand = (message: CmdMsg) =>{
