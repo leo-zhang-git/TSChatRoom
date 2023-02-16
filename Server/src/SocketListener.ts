@@ -1,5 +1,5 @@
 import net from 'net'
-import { DealCmd, DoJoin, DoLogin, DoSay, DoSignup, ForceLogout } from './DealMessage';
+import { DealCmd, DoJoin, DoKick, DoLogin, DoSay, DoSignup, ForceLogout } from './DealMessage';
 import { CloseSocket, Print, ReceiveMsg } from './SocketPackageIO'
 
 export const clients: net.Socket[] = []
@@ -25,6 +25,9 @@ export const OnReceive = (socket: net.Socket) => {
                     break
                 case 'say':
                     DoSay(socket, message)
+                    break
+                case 'kick':
+                    DoKick(socket, message)
                     break
                 default:
                     Print.Warn('不期望的消息格式：\n' + message)

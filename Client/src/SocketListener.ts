@@ -68,12 +68,14 @@ export const OnReceive = (socket: net.Socket) => {
 export const OnClose = (socket: net.Socket) => {
     socket.on('close',(data)=>{
         console.log('连接断开')
+        process.exit()
     })
 }
 
 export const OnError = (socket: net.Socket) => {
     socket.on('error', (err) => {
-        throw Error('连接错误')
+        Print.print('连接错误')
+        process.exit()
     })
 }
 

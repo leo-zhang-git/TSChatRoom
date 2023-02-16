@@ -56,6 +56,9 @@ export const ConsoleListener = (line: string) =>{
         case 'reply':
             // TODO
             break
+        case 'kick':
+            KickCmd(cmdArg)
+            break
         default :
             Print.Tips('找不到指令')
             break
@@ -187,6 +190,18 @@ function SayCmd(str: string){
         return
     }
     SendMsg(socket, {type: 'say', text: str})
+}
+
+function KickCmd(str: string){
+    if(GetState() !== 'room'){
+        Print.Tips('只有在房间中才能使用踢出指令')
+        return
+    }
+    if(!IsNumber(str)){
+        Print.Tips('命令格式错误')
+        return
+    }
+    SendMsg(socket, {type: 'kick', account: str})
 }
 
 function ListCmd(){

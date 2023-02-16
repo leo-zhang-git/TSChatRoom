@@ -1,6 +1,6 @@
 import {Socket} from 'net'
 import {redisClient} from './redisConnection'
-import { CmdMsg, JoinRecMsg, JsonToObj, ListRecMsg, LoginMsg, LoginRecMsg, Print, RefreshRecMsg, SayMsg, SayRecMsg, SendMsg, SignupMsg, SignupRecMsg } from './SocketPackageIO'
+import { CmdMsg, JoinRecMsg, JsonToObj, KickMsg, ListRecMsg, LoginMsg, LoginRecMsg, Print, RefreshRecMsg, SayMsg, SayRecMsg, SendMsg, ServerMsg, SignupMsg, SignupRecMsg } from './SocketPackageIO'
 
 const ACCOUNTMARK = 'uidCnt'
 const MAXROOM = 1
@@ -188,10 +188,7 @@ const DoList = (socket: Socket) =>{
 
 const DoLogout = (socket: Socket) =>{
     Print.print('DoLogout')
-    if(!ClientIsLogin(socket)){
-        Print.Warn('has invaild client to logout room offline')
-        return
-    }
+    if(!ClientIsLogin(socket)) return
     let personState = GetPersonState(socket)
     if(personState.state === 'room') DoLeave(socket)
 
@@ -276,6 +273,40 @@ export const DoSay = (socket: Socket, message: SayMsg) =>{
         recMsg.mentionYou = recMsg.text.match('@' + i.name) !== null
         SendMsg(findClient[i.account], recMsg)
     }
+}
+
+export const DoKick = (socket: Socket, message: KickMsg) =>{
+    Print.print('DoKick')
+    if(!ClientIsLogin(socket)){
+        Print.Warn('has invaild client to kick offline')
+        return
+    }
+    let personState = GetPersonState(socket)
+    if(!personState.room){
+        Print.Warn('has invaild client to kick not in room')
+        return
+    }
+    
+    let recMsg: ServerMsg = {
+        type: 'server',
+        text: ''
+    }
+    
+    if(personState.person.type === 'admin'){
+        if(!(personState.room.members.some( e => e.account === message.account))){
+            recMsg.text = '房间中不存在该用户'
+        }
+        else{
+            let user = findClient[message.account]
+            SendMsg(user, {type: 'server', text: '您已被管理员踢出房间'})
+            DoLeave(user)
+            recMsg.text = '成功踢出该用户'
+        }
+    }
+    else{
+        recMsg.text = '您没有管理员权限'
+    }
+    SendMsg(socket, recMsg)
 }
 
 export const ForceLogout = (socket: Socket) => {
