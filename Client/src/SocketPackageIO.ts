@@ -86,7 +86,7 @@ export const SendMsg = (socket: net.Socket, message: TcpMessage) => {
 
 }
 
-export const ReceiveMsg = (socket: net.Socket, data: Buffer): TcpMessage | undefined => {
+export const ReceiveMsg = (socket: net.Socket, data: Buffer = Buffer.from('')): TcpMessage | undefined => {
     // copy to Buffer
     let target: {buffer: Buffer, ptr: number}
     if(!buffers.has(socket)){

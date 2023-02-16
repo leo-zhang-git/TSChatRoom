@@ -8,26 +8,31 @@ export const OnReceive = (socket: net.Socket) => {
     socket.on("data", (data) => {
         Print.print(`收到来自客户端的数据\n${data}`);
         let message = ReceiveMsg(socket, data)
-        switch(message?.type){
-            case 'signup':
-                DoSignup(socket, message)
-                break
-            case 'login':
-                DoLogin(socket, message)
-                break
-            case 'command':
-                DealCmd(socket, message)
-                break
-            case 'join':
-                DoJoin(socket, message.rid)
-                break
-            case 'say':
-                DoSay(socket, message)
-                break
-            default:
-                Print.Warn('不期望的消息格式：\n' + message)
-                break
+        while(message){
+            Print.print('缓冲区读取 :' + message)
+            switch(message?.type){
+                case 'signup':
+                    DoSignup(socket, message)
+                    break
+                case 'login':
+                    DoLogin(socket, message)
+                    break
+                case 'command':
+                    DealCmd(socket, message)
+                    break
+                case 'join':
+                    DoJoin(socket, message.rid)
+                    break
+                case 'say':
+                    DoSay(socket, message)
+                    break
+                default:
+                    Print.Warn('不期望的消息格式：\n' + message)
+                    break
+            }
+            message = ReceiveMsg(socket)
         }
+        
     });
 }
 
