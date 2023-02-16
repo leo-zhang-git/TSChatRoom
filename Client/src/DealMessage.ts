@@ -1,5 +1,5 @@
 import {socket} from '.'
-import { CmdMsg, JoinMsg, JoinRecMsg, ListRecMsg, LoginMsg, LoginRecMsg, Print, RefreshRecMsg, SayRecMsg, SendMsg, SignupMsg, SignupRecMsg } from './SocketPackageIO'
+import { CmdMsg, JoinMsg, JoinRecMsg, ListRecMsg, LoginMsg, LoginRecMsg, Print, RefreshRecMsg, ReplyMsg, SayRecMsg, SendMsg, SignupMsg, SignupRecMsg } from './SocketPackageIO'
 
 type State = 'offline' | 'loby' | 'room'
 let state: State = 'offline'
@@ -62,8 +62,18 @@ export const RecList = (message: ListRecMsg) =>{
 
 export const RecSay = (message: SayRecMsg) =>{
     let curMessage = {rownum: messageList.length + 1, senderName: message.senderName, text: message.text}
+    let str = curMessage.rownum + '\t[' + curMessage.senderName + '] ' + curMessage.text
+    if(message.mentionYou) str = "=========== " + str + " ==========="
+
+    messageList.push(curMessage)
+    console.log(str)
+}
+
+export const RecReply = (message: ReplyMsg) =>{
+    let curMessage = {rownum: messageList.length + 1, senderName: message.senderName as string, text: message.text}
     let str = curMessage.rownum + ' [' + curMessage.senderName + '] ' + curMessage.text
     if(message.mentionYou) str = "=========== " + str + " ==========="
+    str += '\n\t[回复] [' + message.recName + '] ' + message.recText
 
     messageList.push(curMessage)
     console.log(str)
@@ -72,3 +82,5 @@ export const RecSay = (message: SayRecMsg) =>{
 export const SendCommand = (message: CmdMsg) =>{
     SendMsg(socket, message)
 }
+
+export const GetMessageList = () => messageList

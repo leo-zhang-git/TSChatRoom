@@ -9,7 +9,7 @@ let buffers = new Map<net.Socket, {buffer: Buffer, ptr: number}>()
 
 const singleCmd:['help', 'exit', 'logout', 'create room', 'refresh', 'leave', 'list', 'roll'] = ['help', 'exit', 'logout', 'create room', 'refresh', 'leave', 'list', 'roll'] 
 
-export type TcpMessage = NormalMsg | LoginMsg | SignupMsg | SignupRecMsg | ServerMsg | LoginRecMsg | CmdMsg | JoinMsg | JoinRecMsg | RefreshRecMsg | ListRecMsg | SayMsg | SayRecMsg | KickMsg
+export type TcpMessage = NormalMsg | LoginMsg | SignupMsg | SignupRecMsg | ServerMsg | LoginRecMsg | CmdMsg | JoinMsg | JoinRecMsg | RefreshRecMsg | ListRecMsg | SayMsg | SayRecMsg | KickMsg | ReplyMsg
 export interface NormalMsg {
     type: 'normal'
     text: string
@@ -76,6 +76,14 @@ export interface SayRecMsg{
 export interface KickMsg{
     type: 'kick'
     account: string
+}
+export interface ReplyMsg{
+    type: 'reply'
+    recName: string
+    recText: string
+    senderName?: string
+    text: string
+    mentionYou: boolean
 }
 
 export const SendMsg = (socket: net.Socket, message: TcpMessage) => {

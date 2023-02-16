@@ -1,5 +1,5 @@
 import net from 'net'
-import { DealCmd, DoJoin, DoKick, DoLogin, DoSay, DoSignup, ForceLogout } from './DealMessage';
+import { DealCmd, DoJoin, DoKick, DoLogin, DoReply, DoSay, DoSignup, ForceLogout } from './DealMessage';
 import { CloseSocket, Print, ReceiveMsg } from './SocketPackageIO'
 
 export const clients: net.Socket[] = []
@@ -9,7 +9,6 @@ export const OnReceive = (socket: net.Socket) => {
         Print.print(`收到来自客户端的数据\n${data}`);
         let message = ReceiveMsg(socket, data)
         while(message){
-            Print.print('缓冲区读取 :' + message)
             switch(message?.type){
                 case 'signup':
                     DoSignup(socket, message)
@@ -25,6 +24,9 @@ export const OnReceive = (socket: net.Socket) => {
                     break
                 case 'say':
                     DoSay(socket, message)
+                    break
+                case 'reply':
+                    DoReply(socket, message)
                     break
                 case 'kick':
                     DoKick(socket, message)

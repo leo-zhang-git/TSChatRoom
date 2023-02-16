@@ -1,5 +1,5 @@
 import { socket } from ".";
-import { GetState, SendCommand } from "./DealMessage";
+import { GetMessageList, GetState, SendCommand } from "./DealMessage";
 import {CmdMsg, JoinMsg, LoginMsg, Print, SendMsg, SignupMsg} from "./SocketPackageIO";
 
 
@@ -54,7 +54,7 @@ export const ConsoleListener = (line: string) =>{
             SayCmd(cmdArg)
             break
         case 'reply':
-            // TODO
+            ReplyCmd(cmdArg)
             break
         case 'kick':
             KickCmd(cmdArg)
@@ -192,6 +192,36 @@ function SayCmd(str: string){
     SendMsg(socket, {type: 'say', text: str})
 }
 
+function ReplyCmd(str: string){
+    if(GetState() !== 'room'){
+        Print.Tips('只有在房间中才能发言')
+        return
+    }
+
+    let line = (str.match(/^[1-9]*\s/)?.[0])?.trim() as string
+
+    if(!IsNumber(line)){
+        Print.Tips('命令格式错误')
+        return
+    }
+     
+    let text = str.replace(line as string, '').trim()
+    if(Number(line) > GetMessageList().length){
+        Print.Tips('找不到该消息')
+        return
+    }
+
+    let targetMsg = GetMessageList()[Number(line) - 1]
+
+    SendMsg(socket, {
+        type: 'reply',
+        recName: targetMsg.senderName,
+        recText: targetMsg.text,
+        text: text,
+        mentionYou: false
+    })
+}
+
 function KickCmd(str: string){
     if(GetState() !== 'room'){
         Print.Tips('只有在房间中才能使用踢出指令')
@@ -212,7 +242,8 @@ function ListCmd(){
 function CmdIncorrect(){
     Print.Tips('命令格式错误')
 }
-function IsNumber(str: string){
+function IsNumber(str: string | undefined){
+    if(!str) return false
     let ret = str.match(/[0-9]*/)
     return ret && ret[0] === str
 }

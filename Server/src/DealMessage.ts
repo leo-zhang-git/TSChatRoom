@@ -1,6 +1,6 @@
 import {Socket} from 'net'
 import {redisClient} from './redisConnection'
-import { CmdMsg, JoinRecMsg, JsonToObj, KickMsg, ListRecMsg, LoginMsg, LoginRecMsg, Print, RefreshRecMsg, SayMsg, SayRecMsg, SendMsg, ServerMsg, SignupMsg, SignupRecMsg } from './SocketPackageIO'
+import { CmdMsg, JoinRecMsg, JsonToObj, KickMsg, ListRecMsg, LoginMsg, LoginRecMsg, Print, RefreshRecMsg, ReplyMsg, SayMsg, SayRecMsg, SendMsg, ServerMsg, SignupMsg, SignupRecMsg } from './SocketPackageIO'
 
 const ACCOUNTMARK = 'uidCnt'
 const MAXROOM = 1
@@ -272,6 +272,25 @@ export const DoSay = (socket: Socket, message: SayMsg) =>{
     for(let i of personState.room.members){
         recMsg.mentionYou = recMsg.text.match('@' + i.name) !== null
         SendMsg(findClient[i.account], recMsg)
+    }
+}
+
+export const DoReply = (socket: Socket, message: ReplyMsg) =>{
+    Print.print('DoSay')
+    if(!ClientIsLogin(socket)){
+        Print.Warn('has invaild client to reply offline')
+        return
+    }
+    let personState = GetPersonState(socket)
+    if(!personState.room){
+        Print.Warn('has invaild client to reply not in room')
+        return
+    }
+
+    for(let i of personState.room.members){
+        message.mentionYou = message.text.match('@' + i.name) !== null
+        message.senderName = personState.person.name
+        SendMsg(findClient[i.account], message)
     }
 }
 
