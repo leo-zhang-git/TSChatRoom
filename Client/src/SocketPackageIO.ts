@@ -131,22 +131,22 @@ export const ReceiveMsg = (socket: net.Socket, data: Buffer = Buffer.from('')): 
 }
 
 export const Print = {
-    Tips: (str: string) => {
+    Tips: (str: any) => {
         console.log("****************< " + str + " >****************")
     },
-    print: (str: string) => {
+    print: (str: any) => {
         if(!DEBUG) return
         console.log(str)
     },
-    Error: (str: string) =>{
+    Error: (str: any) =>{
         console.log("!!!================================== ERROR\n" + str + "\nERROR==================================!!!")
         throw Error('')
     },
-    Warn: (str:string) => {
+    Warn: (str: any) => {
         if(!DEBUG) return
         console.log("<<=============================== warn: \n\n" + str + "\n\nwarn ===============================>>")
     },
-    Debug: (str:string) => {
+    Debug: (str: any) => {
         if(!DEBUG) return
         console.log("<<=============================== debug: \n\n" + str + "\n\ndebug ===============================>>")
     }

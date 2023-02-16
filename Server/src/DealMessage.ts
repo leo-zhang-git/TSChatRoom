@@ -33,6 +33,7 @@ let findClient :{
 } = {}
 
 let roomList: {[rid: string]: Room} = {}
+let gameRoom:{[rid: string]: {round: number, rid: string, state: 'standy' | 'countdown' | 'starting', lastplayerTime: Date, winner: {account: string, name: string, score: number, only: boolean}, playerList: string[]}} = {}
 
 export const DealCmd = (socket: Socket, message: CmdMsg) =>{
     switch(message.cmd){
@@ -50,6 +51,9 @@ export const DealCmd = (socket: Socket, message: CmdMsg) =>{
             break
         case 'leave':
             DoLeave(socket)
+            break
+        case 'roll':
+            DoRoll(socket)
             break
         default:
             break
@@ -205,14 +209,157 @@ const DoLeave = (socket: Socket) =>{
         return
     }
     let personState = GetPersonState(socket)
-    if(personState.state !== 'room'){
+    if(!personState.room){
         Print.Warn('has invaild client to leave room not in room')
+        return
+    }
+    if(personState.room.rid in gameRoom){
+        SendMsg(socket, {type: 'server', text: '游戏结束前无法退出房间'})
         return
     }
     RoomDelMember(personState.room as Room, personState.person)
     personState.state = 'loby'
     personState.room = undefined
     SendMsg(socket, {type: 'command', cmd: 'leave'})
+}
+
+const DoRoll = (socket: Socket) =>{
+    if(!ClientIsLogin(socket)){
+        Print.Warn('has invaild client to start roll offline')
+        return
+    }
+    let personState = GetPersonState(socket)
+    if(!personState.room){
+        Print.Warn('has invaild client to start roll not in room')
+        return
+    }
+
+    let rid = personState.room.rid
+
+    let play = (idx: number, playerList: string[], room: typeof gameRoom[string]) =>{
+        if(room.state !== 'starting' || !(rid in roomList)) return
+        // eslint-disable-next-line no-param-reassign
+        while(idx < playerList.length && !(playerList[idx] in findClient)) idx ++;
+        if(idx < playerList.length){
+            let score = Math.round(Math.random() * 100)
+            let uname = GetPersonState(findClient[playerList[idx]]).person.name
+            if(score > room.winner.score){
+                room.winner.score = score
+                room.winner.account = playerList[idx]
+                room.winner.name = uname
+                room.winner.only = true
+            }
+            else if(score === room.winner.score){
+                room.winner.only = false
+            }
+            for(let i of roomList[rid].members){
+                if(i.account in findClient)
+                    SendMsg(findClient[i.account], {type: 'server', text: `玩家 ${playerList[idx]}[${uname}] 的得分为 ${score}`})
+            }
+        }
+        if(idx >= playerList.length){
+            let message: ServerMsg = {type: 'server', text: ''}
+            if(room.winner.only){
+                message.text = `玩家 ${room.winner.account}[${room.winner.name}]的得分为 ${room.winner.score}  得分最高 `
+                for(let i of roomList[rid].members){
+                    if(i.account in findClient) SendMsg(findClient[i.account], message)
+                }
+                delete gameRoom[room.rid]
+            }
+            else{
+                if(room.round >= 5) message.text = '不存在最高分， 回合数达到上限，游戏平局\n\n'
+                else message.text = '不存在最高分， 倒计时后重新开始游戏\n\n'
+                for(let i of roomList[rid].members){
+                    if(i.account in findClient)
+                        SendMsg(findClient[i.account], message)
+                }
+
+                if(room.round < 5){
+                    room.round++
+                    restartCountdown(5, playerList, room)
+                }
+            }
+            return
+        }
+        setTimeout(() =>{play(idx + 1, playerList, room)}, 1 * 1000)
+    }
+
+    let countdown = (second: number, playerList: string[], room: typeof gameRoom[string]) =>{
+        if(room.state !== 'countdown' || !(rid in roomList)) return
+        for(let i of roomList[rid].members){
+            if(i.account in findClient)
+                SendMsg(findClient[i.account], {type: 'server', text: '倒计时: ' + second})
+        }
+        if(second > 0) setTimeout(() => {countdown(second - 1, playerList, room)}, 1 * 1000)
+        if(second === 0 && (new Date()).getTime() - gameRoom[rid].lastplayerTime.getTime() >= 5 * 1000){
+            room.state = 'starting'
+            for(let i of roomList[rid].members){
+                if(i.account in findClient)
+                    SendMsg(findClient[i.account], {type: 'server', text: '游戏开始\n\n'})
+            }
+            play(0, playerList, room)
+        }
+    }
+
+    let restartCountdown = (second: number, playerList: string[], room: typeof gameRoom[string]) =>{
+        if(room.state !== 'starting' || !(rid in roomList)) return
+        for(let i of roomList[rid].members){
+            if(i.account in findClient)
+                SendMsg(findClient[i.account], {type: 'server', text: '倒计时: ' + second})
+        }
+        if(second > 0) setTimeout(() => {countdown(second - 1, playerList, room)}, 1 * 1000)
+        if(second === 0){
+            room.state = 'starting'
+            for(let i of roomList[rid].members){
+                if(i.account in findClient)
+                    SendMsg(findClient[i.account], {type: 'server', text: '重新开始\n\n'})
+            }
+            play(0, playerList, room)
+        }
+    }
+
+    if(rid in gameRoom){
+        if(gameRoom[rid].playerList.indexOf(personState.person.account) !== -1){
+            SendMsg(findClient[personState.person.account], {type: 'server', text: '您已经在游戏中！'})
+            return
+        }
+        if(gameRoom[rid].state === 'starting'){
+            SendMsg(findClient[personState.person.account], {type: 'server', text: '游戏已经开始，请等待下一轮'})
+            return
+        }
+        gameRoom[rid].playerList.push(personState.person.account)
+        gameRoom[rid].lastplayerTime = new Date()
+        gameRoom[rid].state = 'standy'
+        setTimeout(() =>{
+            if(gameRoom[rid].state === 'standy' && (new Date()).getTime() - gameRoom[rid].lastplayerTime.getTime() >= 5 * 1000) {
+                gameRoom[rid].state = 'countdown'
+                countdown(5, gameRoom[rid].playerList, gameRoom[rid]) 
+            }
+            }, 5 * 1000)
+    }
+    else{
+        gameRoom[rid] = {
+            round: 1,
+            rid: rid,
+            state: 'standy',
+            lastplayerTime: new Date(),
+            winner: {account: '', name: '', only: false, score: 0},
+            playerList: [personState.person.account]
+        }
+        for(let i of personState.room.members){
+            SendMsg(findClient[i.account], {type: 'server', text: '开始roll点游戏'})
+        }
+
+        setTimeout(() =>{
+            if(gameRoom[rid].state === 'standy' && (new Date()).getTime() - gameRoom[rid].lastplayerTime.getTime() >= 5 * 1000) {
+                gameRoom[rid].state = 'countdown'
+                countdown(5, gameRoom[rid].playerList, gameRoom[rid]) 
+            }
+            }, 5 * 1000)
+    }
+    for(let i of personState.room.members){
+        SendMsg(findClient[i.account], {type: 'server', text: `玩家 ${personState.person.account}[${personState.person.name}] 加入游戏`})
+    }
 }
 
 export const DoJoin = (socket: Socket, rid: string) =>{
