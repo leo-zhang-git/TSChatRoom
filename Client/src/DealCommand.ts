@@ -39,7 +39,7 @@ export const ConsoleListener = (line: string) =>{
             LeaveCmd()
             break
         case 'roll':
-            // TODO
+            RollCmd()
             break
         case 'login':
             LoginCmd(cmdArg)
@@ -129,6 +129,14 @@ function LeaveCmd(){
     SendCommand({type: 'command', cmd: 'leave'})
 }
 
+function RollCmd(){
+    if(GetState() !== 'room'){
+        Print.Tips('请进入一个房间开始游戏')
+        return
+    }
+    SendCommand({type: 'command', cmd: 'roll'})
+}
+
 function LoginCmd(str: string){
     if(GetState() !== 'offline'){
         Print.Tips('您已经登录，若要登录其他账号请先退出当前账号')
@@ -206,7 +214,7 @@ function ReplyCmd(str: string){
     }
      
     let text = str.replace(line as string, '').trim()
-    if(Number(line) > GetMessageList().length){
+    if(Number(line) > GetMessageList().length || Number(line) < 1){
         Print.Tips('找不到该消息')
         return
     }
