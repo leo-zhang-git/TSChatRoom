@@ -1,6 +1,6 @@
 import net from 'net'
 import { Print, ReceiveMsg } from './SocketPackageIO'
-import { RecJoin, RecLogin, RecRefresh, RecSignup, SetState } from './DealMessage'
+import { RecJoin, RecList, RecLogin, RecRefresh, RecSay, RecSignup, SetState } from './DealMessage'
 
 export const OnConnect = (socket: net.Socket) => {
     socket.on('connect',()=>{
@@ -14,7 +14,7 @@ export const OnConnect = (socket: net.Socket) => {
 
 export const OnReceive = (socket: net.Socket) => {
     socket.on('data',(data)=>{
-        console.log(`收到来自服务端的数据：${data}`)
+        Print.print(`收到来自服务端的数据：${data}`)
         let message = ReceiveMsg(socket, data)
         switch(message?.type)
         {
@@ -35,6 +35,12 @@ export const OnReceive = (socket: net.Socket) => {
                 break
             case 'refreshRec':
                 RecRefresh(message)
+                break
+            case 'listRec':
+                RecList(message)
+                break
+            case 'sayRec':
+                RecSay(message)
                 break
             case 'command':
                 switch(message.cmd){

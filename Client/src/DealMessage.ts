@@ -1,19 +1,17 @@
 import {socket} from '.'
-import { CmdMsg, JoinMsg, JoinRecMsg, LoginMsg, LoginRecMsg, Print, RefreshRecMsg, SendMsg, SignupMsg, SignupRecMsg } from './SocketPackageIO'
+import { CmdMsg, JoinMsg, JoinRecMsg, ListRecMsg, LoginMsg, LoginRecMsg, Print, RefreshRecMsg, SayRecMsg, SendMsg, SignupMsg, SignupRecMsg } from './SocketPackageIO'
 
 type State = 'offline' | 'loby' | 'room'
 let state: State = 'offline'
 export const GetState = () => state
 export const SetState = (_state: State) => {state = _state}
 
-export const SendLogin = (account: string, pwd: string) => {
-    let message:LoginMsg = {
-        type: 'login',
-        account: account,
-        pwd: pwd
-    }
-    SendMsg(socket, message)
+interface RoomMessage{
+    rownum: number
+    senderName: string
+    text: string
 }
+let messageList: RoomMessage[] = []
 
 export const RecLogin = (message: LoginRecMsg) =>{
     if(!message.ret){
@@ -22,15 +20,6 @@ export const RecLogin = (message: LoginRecMsg) =>{
     }
     Print.Tips(message.text)
     SetState('loby')
-}
-
-export const SendSignup = (name:string, pwd: string) =>{
-    let message:SignupMsg = {
-        type: 'signup',
-        name: name,
-        pwd: pwd
-    }
-    SendMsg(socket, message)
 }
 
 export const RecSignup = (message: SignupRecMsg) =>{
@@ -42,14 +31,6 @@ export const RecSignup = (message: SignupRecMsg) =>{
     console.log('您的账号为：' + message.account)
 }
 
-export const SendJoin = (rid: string) =>{
-    let message:JoinMsg = {
-        type: 'join',
-        rid: rid,
-    }
-    SendMsg(socket, message)
-}
-
 export const RecJoin = (message: JoinRecMsg) =>{
     if(!message.ret){
         Print.Tips('加入房间失败，请检查房间id是否正确')
@@ -58,15 +39,34 @@ export const RecJoin = (message: JoinRecMsg) =>{
 
     SetState('room')
     Print.Tips('加入房间: ' + message.rid + " " + message.rname)
+    messageList = []
 }
 
 export const RecRefresh = (message: RefreshRecMsg) =>{
     if(state !== 'loby') return
     console.log('\n\n当前房间列表:')
-    console.log('rid\t\trname')
+    console.log('房间id\t\t房间名\t\t在线人数')
     for(let i of message.rooms){
-        console.log(i.rid + '\t\t' + i.rname)
+        console.log(i.rid + '\t\t' + i.rname + '\t\t' + i.memberCnt)
     }
+}
+
+export const RecList = (message: ListRecMsg) =>{
+    if(state !== 'room') return
+    console.log('\n\n当前房间在线用户列表:')
+    console.log('用户名\t\t账号')
+    for(let i of message.memberList){
+        console.log(i.uname + '\t\t' + i.account)
+    }
+}
+
+export const RecSay = (message: SayRecMsg) =>{
+    let curMessage = {rownum: messageList.length + 1, senderName: message.senderName, text: message.text}
+    let str = curMessage.rownum + ' [' + curMessage.senderName + '] ' + curMessage.text
+    if(message.mentionYou) str = "=========== " + str + " ==========="
+
+    messageList.push(curMessage)
+    console.log(str)
 }
 
 export const SendCommand = (message: CmdMsg) =>{

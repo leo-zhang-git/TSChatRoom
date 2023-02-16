@@ -1,6 +1,6 @@
 import {Socket} from 'net'
 import {redisClient} from './redisConnection'
-import { CmdMsg, JoinRecMsg, JsonToObj, LoginMsg, LoginRecMsg, Print, RefreshRecMsg, SendMsg, SignupMsg, SignupRecMsg } from './SocketPackageIO'
+import { CmdMsg, JoinRecMsg, JsonToObj, ListRecMsg, LoginMsg, LoginRecMsg, Print, RefreshRecMsg, SayMsg, SayRecMsg, SendMsg, SignupMsg, SignupRecMsg } from './SocketPackageIO'
 
 const ACCOUNTMARK = 'uidCnt'
 const MAXROOM = 1
@@ -41,6 +41,9 @@ export const DealCmd = (socket: Socket, message: CmdMsg) =>{
             break
         case 'refresh':
             DoRefresh(socket)
+            break
+        case 'list':
+            DoList(socket)
             break
         case 'logout':
             DoLogout(socket)
@@ -158,7 +161,27 @@ const DoRefresh = (socket: Socket) =>{
     }
     // eslint-disable-next-line guard-for-in
     for(let i in roomList){
-        message.rooms.push({rid: i, rname: roomList[i].rname})
+        message.rooms.push({rid: i, rname: roomList[i].rname, memberCnt: roomList[i].members.length})
+    }
+    SendMsg(socket, message)
+}
+
+const DoList = (socket: Socket) =>{
+    Print.print('DoList')
+    if(!ClientIsLogin(socket)){
+        Print.Warn('has invaild client to get list offline')
+        return
+    }
+    let personState = GetPersonState(socket)
+    if(!personState.room){
+        Print.Warn('has invaild client to get list not in loby')
+        return
+    }
+
+    let members = personState.room.members
+    let message: ListRecMsg = {
+        type : 'listRec',
+        memberList: members.map((e) => {return {uname: e.name, account: e.account}})
     }
     SendMsg(socket, message)
 }
@@ -172,6 +195,7 @@ const DoLogout = (socket: Socket) =>{
     let personState = GetPersonState(socket)
     if(personState.state === 'room') DoLeave(socket)
 
+    Print.print(personState.person.account + ' 退出登录')
     delete findClient[personState.person.account]
     findPerson.delete(socket)
     SendMsg(socket, {type: 'command', cmd: 'logout'})
@@ -230,9 +254,33 @@ export const DoJoin = (socket: Socket, rid: string) =>{
     SendMsg(socket, message)
 }
 
+export const DoSay = (socket: Socket, message: SayMsg) =>{
+    Print.print('DoSay')
+    if(!ClientIsLogin(socket)){
+        Print.Warn('has invaild client to say offline')
+        return
+    }
+    let personState = GetPersonState(socket)
+    if(!personState.room){
+        Print.Warn('has invaild client to say not in room')
+        return
+    }
+
+    let recMsg: SayRecMsg = {
+        type : 'sayRec',
+        text : message.text,
+        mentionYou: false,
+        senderName: personState.person.name,
+    }
+    for(let i of personState.room.members){
+        recMsg.mentionYou = recMsg.text.match('@' + i.name) !== null
+        SendMsg(findClient[i.account], recMsg)
+    }
+}
+
 export const ForceLogout = (socket: Socket) => {
     DoLogout(socket)
-    socket.end()
+    if(!socket.closed) socket.end()
 }
 
 function IsCorrectPwd(pwd: string): boolean {

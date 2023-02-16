@@ -8,10 +8,13 @@ redisClient.on('ready', (err) =>{Print.print('redis ready')})
 export async function InitRedisConnect() {
     process.on('SIGINT', () =>{
         redisClient.save()
-        if(redisClient.isOpen) redisClient.quit()
+        try{
+            redisClient.quit()
+        }catch{
+            console.log('redis close exception')
+        }
     })
     await redisClient.connect()   // 连接
-
     // /* 增 改 */
     // const status = await redisClient.set('key', 'value') // 设置值
     // console.log(status )

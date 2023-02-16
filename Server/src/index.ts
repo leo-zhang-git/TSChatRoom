@@ -1,5 +1,5 @@
 import net from 'net'
-import { OnClose, OnError, OnReceive, OnTimeout } from './SocketListener'
+import { clients, OnClose, OnError, OnReceive, OnTimeout } from './SocketListener'
 import { Print } from './SocketPackageIO';
 import {InitRedisConnect} from './redisConnection'
 
@@ -28,7 +28,11 @@ function InitServer(){
 
   process.on('SIGINT', () =>{
     console.log('server close')
+    for(let i of clients){
+      i.destroy()
+    }
     server.close()
+    process.exit()
   })
 }
 InitRedisConnect()
