@@ -4,7 +4,7 @@ import { singleCmd } from './DealCommand'
 const BUFFERMAXLEN = 65535
 const MSGMXLEN = 12000
 const HEADLEN = 4
-const DEBUG: true = true
+const DEBUG = false
 
 let buffers = new Map<net.Socket, {buffer: Buffer, ptr: number}>()
 

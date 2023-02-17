@@ -3,7 +3,7 @@ import {redisClient} from './redisConnection'
 import { CmdMsg, JoinRecMsg, JsonToObj, KickMsg, ListRecMsg, LoginMsg, LoginRecMsg, Print, RefreshRecMsg, ReplyMsg, SayMsg, SayRecMsg, SendMsg, ServerMsg, SignupMsg, SignupRecMsg } from './SocketPackageIO'
 
 const ACCOUNTMARK = 'uidCnt'
-const MAXROOM = 1
+const MAXROOM = 10
 const DEFAULTROOMNAME = '未设置房间名'
 const ROOMDELTIME = 10 * 1000
 let nexRoom = 0
@@ -242,6 +242,7 @@ const DoRoll = (socket: Socket) =>{
         while(idx < playerList.length && !(playerList[idx] in findClient)) idx ++;
         if(idx < playerList.length){
             let score = Math.round(Math.random() * 100)
+            // let score = 10
             let uname = GetPersonState(findClient[playerList[idx]]).person.name
             if(score > room.winner.score){
                 room.winner.score = score
@@ -307,7 +308,7 @@ const DoRoll = (socket: Socket) =>{
             if(i.account in findClient)
                 SendMsg(findClient[i.account], {type: 'server', text: '倒计时: ' + second})
         }
-        if(second > 0) setTimeout(() => {countdown(second - 1, playerList, room)}, 1 * 1000)
+        if(second > 0) setTimeout(() => {restartCountdown(second - 1, playerList, room)}, 1 * 1000)
         if(second === 0){
             room.state = 'starting'
             for(let i of roomList[rid].members){
